@@ -1,6 +1,7 @@
 import os
 import random
 import discord
+from discord import app_commands
 from discord.ext import commands
 from discord_slash import SlashCommand
 from dotenv import load_dotenv
@@ -12,27 +13,21 @@ load_dotenv(dotenv_path="config")
 intents = discord.Intents.all()
 intents.members = True
 bot = commands.Bot(command_prefix='!',intents=intents)
+guild_ids = [1035614329678082098]
 
 @bot.event
 async def on_ready():
     print('HideInTheShadows!')
+    synced = await bot.tree.sync()
+    print("Slash CMDs Synced " + str(len(synced)))
 
 #Tout ce qui est slash commande
-
-slash = SlashCommand(bot, sync_commands=True)
-
-@slash.slash(name="Lancer", guild_ids=[1035614329678082098] ,description="lance un dé pour toi")
-async def lancer(ctx):
-    await ctx.send("test")
-
+@bot.tree.command(name="hello", description="shutting dow the bot")
+async def shutdown(interaction: discord.Interaction):
+    await interaction.response.send_message(content="that a test")
+    await bot.close()
 
 bot.run(os.getenv("TOKEN"))
-
-
-
-
-
-
 
 #mots interdits + suppression
 #IWords = ["fuck","pute","fdp"]
