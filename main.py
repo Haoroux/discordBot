@@ -27,6 +27,12 @@ async def on_message(message):
     if message.content.lower() in IWords:
         await message.channel.purge(limit=1)
 
+#quand une personne arrive sur le serv
+@bot.event
+async def on_member_join(member):
+    general_channel: discord.TextChannel = bot.get_channel(1035614495944474787)
+    await general_channel.send(content=f"bienvenue sur le serv {member.display_name}!")
+
 #pierre papier sciseaux
 @app_commands.choices(actions = [
     app_commands.Choice(name="pierre", value="pierre"),
@@ -36,12 +42,34 @@ async def on_message(message):
 
 @bot.tree.command(description="joue a pierre papier ciseaux avec moi")
 async def rps(interaction: discord.Interaction, actions: str):
-    if actions == 'pierre':
-        await interaction.response.send_message("you won")
-    elif actions == "papier":
-        await interaction.response.send_message("you lose")
-    else:
-        await interaction.response.send_message("you lose")
+    botAction = random.randint(1,3)
+    print(botAction)
+    performedAction = 'waiting'
+    if botAction == 1:
+        performedAction = 'pierre'
+        if actions == 'papier':
+            await interaction.response.send_message("Comme j’ai joué "+ performedAction +". Tu as gagné")
+        elif actions == 'pierre':
+            await interaction.response.send_message("On a tout les deux joué " + performedAction)
+        else:
+            await interaction.response.send_message("Comme j’ai joué " + performedAction + ". Tu as perdu")
+    if botAction == 2:
+        performedAction = 'papier'
+        if actions == 'ciseaux':
+            await interaction.response.send_message("Comme j’ai joué "+ performedAction +". Tu as gagné")
+        elif actions == 'papier':
+            await interaction.response.send_message("On a tout les deux joué " + performedAction)
+        else:
+            await interaction.response.send_message("Comme j’ai joué " + performedAction + ". Tu as perdu")
+    if botAction == 3:
+        performedAction = 'ciseaux'
+        if actions == 'pierre':
+            await interaction.response.send_message("Comme j’ai joué "+ performedAction +". Tu as gagné")
+        elif actions == 'ciseaux':
+            await interaction.response.send_message("On a tout les deux joué " + performedAction)
+        else:
+            await interaction.response.send_message("Comme j’ai joué " + performedAction + ". Tu as perdu")
+
 
 
 #Tout ce qui est slash commande
@@ -53,8 +81,3 @@ async def test(interaction: discord.Interaction):
 bot.run(os.getenv("TOKEN"))
 
 
-#quand une personne arrive sur le serv
-#@bot.event
-#async def on_member_join(member):
-#    general_channel: discord.TextChannel = bot.get_channel(1035614495944474787)
-#    await general_channel.send(content=f"bienvenue sur le serv {member.display_name}!")
