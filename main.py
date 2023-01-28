@@ -15,18 +15,28 @@ guild_ids = [1035614329678082098]
 
 @bot.event
 async def on_ready():
-    print('HideInTheShadows!')
+    print('System operating!')
     synced = await bot.tree.sync()
     print("Slash CMDs Synced " + str(len(synced)))
 
+#quand une personne arrive sur le serv
+@bot.event
+async def on_member_join(member):
+    general_channel: discord.TextChannel = bot.get_channel(1035614495944474787)
+    await general_channel.send(content=f"bienvenue sur le serv {member.display_name}!")
+
+#/help
+@bot.tree.command(description="talk about the posibilities of this bot")
+async def help(interaction: discord.Interaction):
+    await interaction.response.send_message("here is your help")
+
 #Auto moderation
-IWordList = ["fuck","pute","fdp","ip"]
+IWordList = ['ip']
 
 @app_commands.choices(addordelete = [
     app_commands.Choice(name="add",value='add'),
     app_commands.Choice(name="delete", value='delete')
 ])
-
 @bot.tree.command(description="rajoute ou suprime des mots de la list pour l’auto modération(écris les mots en minuscules)")
 async def automod(interaction: discord.Interaction,addordelete: str,banworld: str):
     if addordelete == 'add':
@@ -38,14 +48,16 @@ async def automod(interaction: discord.Interaction,addordelete: str,banworld: st
 
 @bot.event
 async def on_message(message):
-    if message.content.lower() in IWordList:
-        await message.channel.purge(limit=1)
-
-#quand une personne arrive sur le serv
-@bot.event
-async def on_member_join(member):
-    general_channel: discord.TextChannel = bot.get_channel(1035614495944474787)
-    await general_channel.send(content=f"bienvenue sur le serv {member.display_name}!")
+    for  word in IWordList:
+        if word in message.content.lower():
+            await message.delete()
+    await bot.process_commands(message)
+#commande de modération
+#clear
+@bot.tree.command(description="suprime le nombre de msg voulu")
+async def clear(interaction: discord.Interaction, amount:int):
+    await interaction.channel.purge(limit=amount)
+    await interaction.channel.send(f"voila le /clear est fini!")
 
 #pierre papier sciseaux
 @app_commands.choices(actions = [
