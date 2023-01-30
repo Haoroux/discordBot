@@ -1,12 +1,16 @@
+#librairie
 import os
 import random
+import json
 import discord
+from discord import member
+from discord.ext.commands import has_permissions, MissingPermissions
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 
 #importation du token du bot
-load_dotenv(dotenv_path="config")
+load_dotenv(dotenv_path="config.json")
 
 #Démmarage et intents
 intents = discord.Intents.all()
@@ -19,19 +23,35 @@ async def on_ready():
     synced = await bot.tree.sync()
     print("Slash CMDs Synced " + str(len(synced)))
 
-#quand une personne arrive sur le serv
-@bot.event
-async def on_member_join(member):
-    general_channel: discord.TextChannel = bot.get_channel(1035614495944474787)
-    await general_channel.send(content=f"bienvenue sur le serv {member.display_name}!")
+#slash command
 
 #/help
 @bot.tree.command(description="talk about the posibilities of this bot")
 async def help(interaction: discord.Interaction):
     await interaction.response.send_message("here is your help")
 
+#test command
+@bot.tree.command(name="ping", description="ping?")
+async def ping(interaction: discord.Interaction):
+    await interaction.response.send_message('PONG')
+
+#commande de modération
+
+#clear
+@bot.tree.command(description="suprime le nombre de msg voulu")
+@app_commands.checks.has_permissions(manage_messages=True)
+async def clear(interaction: discord.Interaction, amount:int):
+    await interaction.channel.purge(limit=amount)
+    await interaction.response.send_message(f"voila le /clear est fini!", ephemeral=True)
+
+@clear.error
+async def on_clear_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.MissingPermissions):
+        await interaction.response.send_message(str(error), ephemeral=True)
+
 #Auto moderation
-IWordList = ['ip']
+BanWorldList = open("BanWorldListJson.json",)
+IWordList = ["ip"]
 
 @app_commands.choices(addordelete = [
     app_commands.Choice(name="add",value='add'),
@@ -52,12 +72,8 @@ async def on_message(message):
         if word in message.content.lower():
             await message.delete()
     await bot.process_commands(message)
-#commande de modération
-#clear
-@bot.tree.command(description="suprime le nombre de msg voulu")
-async def clear(interaction: discord.Interaction, amount:int):
-    await interaction.channel.purge(limit=amount)
-    await interaction.channel.send(f"voila le /clear est fini!")
+
+#jeux
 
 #pierre papier sciseaux
 @app_commands.choices(actions = [
@@ -99,12 +115,5 @@ async def rps(interaction: discord.Interaction, actions: str):
         else:
             await interaction.response.send_message("Comme j’ai joué " + performedAction + ". Tu as perdu")
 
-
-@bot.tree.command(name="ping", description="ping?")
-async def ping(interaction: discord.Interaction):
-    await interaction.response.send_message('PONG')
-
 #Lancement du programme
 bot.run(os.getenv("TOKEN"))
-
-
