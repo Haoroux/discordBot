@@ -1,16 +1,13 @@
-#librairie
+#librairies
 import os
-import random
-import json
 import discord
-from discord import member
 from discord.ext.commands import has_permissions, MissingPermissions
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 
 #importation du token du bot
-load_dotenv(dotenv_path="config.json")
+load_dotenv(dotenv_path="config.py")
 
 #Démmarage et intents
 intents = discord.Intents.all()
@@ -24,40 +21,47 @@ async def on_ready():
     print("Slash CMDs Synced " + str(len(synced)))
 
 #slash command
-
-#/help
-@bot.tree.command(description="talk about the posibilities of this bot")
-async def help(interaction: discord.Interaction):
-    await interaction.response.send_message("here is your help")
-
-#test command
-@bot.tree.command(name="ping", description="ping?")
-async def ping(interaction: discord.Interaction):
-    await interaction.response.send_message('PONG')
-
 #commande de modération
-
 #clear
-@bot.tree.command(description="suprime le nombre de msg voulu")
+@bot.tree.command(description="delete the desired number of messages")
 @app_commands.checks.has_permissions(manage_messages=True)
 async def clear(interaction: discord.Interaction, amount:int):
     await interaction.channel.purge(limit=amount)
-    await interaction.response.send_message(f"voila le /clear est fini!", ephemeral=True)
+    await interaction.response.send_message(f"The /clear is done!", ephemeral=True)
 
 @clear.error
 async def on_clear_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.MissingPermissions):
         await interaction.response.send_message(str(error), ephemeral=True)
+#programming language
+
+
+#Ngrok ip
+@bot.tree.command(description="change the ancient ip to the new ip")
+@app_commands.checks.has_role("MinecraftModerator")
+async def change_ip(interaction:discord.Interaction, ip:str):
+    global actual_ip
+    actual_ip = ip
+    await interaction.response.send_message("The ancient ip has been changed in " + actual_ip)
+
+@change_ip.error
+async def on_change_ip_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.MissingRole):
+        await interaction.response.send_message(str(error), ephemeral=True)
+
+@bot.tree.command(description="Show the actual ip of the minecraft server")
+async def mc_ip(interaction:discord.Interaction):
+    await interaction.response.send_message(str(actual_ip))
 
 #Auto moderation
-BanWorldList = open("BanWorldListJson.json",)
-IWordList = ["ip"]
+IWordList = []
 
 @app_commands.choices(addordelete = [
     app_commands.Choice(name="add",value='add'),
     app_commands.Choice(name="delete", value='delete')
 ])
-@bot.tree.command(description="rajoute ou suprime des mots de la list pour l’auto modération(écris les mots en minuscules)")
+@bot.tree.command(description="add or delete word of the auto moderation")
+@app_commands.checks.has_permissions(manage_messages=True,manage_roles=True)
 async def automod(interaction: discord.Interaction,addordelete: str,banworld: str):
     if addordelete == 'add':
         IWordList.append(banworld)
@@ -66,54 +70,19 @@ async def automod(interaction: discord.Interaction,addordelete: str,banworld: st
         IWordList.remove(banworld)
         await interaction.response.send_message(IWordList)
 
+@automod.error
+async def on_automod_error(interaction:discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.MissingPermissions):
+        await interaction.response.send_message(str(error), ephemeral=True)
+
 @bot.event
 async def on_message(message):
-    for  word in IWordList:
-        if word in message.content.lower():
-            await message.delete()
-    await bot.process_commands(message)
-
-#jeux
-
-#pierre papier sciseaux
-@app_commands.choices(actions = [
-    app_commands.Choice(name="pierre", value="pierre"),
-    app_commands.Choice(name="papier", value="papier"),
-    app_commands.Choice(name="ciseaux", value="ciseaux")
-])
-
-@bot.tree.command(description="joue a pierre papier ciseaux avec moi")
-async def rps(interaction: discord.Interaction, actions: str):
-    botAction = random.randint(1,9)
-    print(botAction)
-    pierreNum = [1,4,7]
-    papierNum = [2,5,8]
-    ciseauxNum = [3,6,9]
-    performedAction = 'waiting'
-    if botAction in pierreNum:
-        performedAction = 'pierre'
-        if actions == 'papier':
-            await interaction.response.send_message("Comme j’ai joué "+ performedAction +". Tu as gagné")
-        elif actions == 'pierre':
-            await interaction.response.send_message("On a tout les deux joué " + performedAction)
-        else:
-            await interaction.response.send_message("Comme j’ai joué " + performedAction + ". Tu as perdu")
-    if botAction in papierNum:
-        performedAction = 'papier'
-        if actions == 'ciseaux':
-            await interaction.response.send_message("Comme j’ai joué "+ performedAction +". Tu as gagné")
-        elif actions == 'papier':
-            await interaction.response.send_message("On a tout les deux joué " + performedAction)
-        else:
-            await interaction.response.send_message("Comme j’ai joué " + performedAction + ". Tu as perdu")
-    if botAction in ciseauxNum:
-        performedAction = 'ciseaux'
-        if actions == 'pierre':
-            await interaction.response.send_message("Comme j’ai joué "+ performedAction +". Tu as gagné")
-        elif actions == 'ciseaux':
-            await interaction.response.send_message("On a tout les deux joué " + performedAction)
-        else:
-            await interaction.response.send_message("Comme j’ai joué " + performedAction + ". Tu as perdu")
+    if(message.author.id == bot.user.id):
+        return
+    else:
+        for  word in IWordList:
+            if word in message.content.lower():
+                await message.delete()
 
 #Lancement du programme
 bot.run(os.getenv("TOKEN"))
